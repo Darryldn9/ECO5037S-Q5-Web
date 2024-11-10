@@ -54,6 +54,27 @@
         button:hover {
             background-color: #0056b3;
         }
+        .transaction-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .transaction-item {
+            border-bottom: 1px solid #eee;
+            padding: 5px 0;
+        }
+        .low-balance {
+            color: red;
+            font-weight: bold;
+        }
+        .faucet-button {
+            background-color: #28a745;
+        }
+        .faucet-button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -88,21 +109,39 @@
             <p>Click the button below to simulate a complete 5-month stokvel cycle.</p>
             <button onclick="simulateCycle()">Start Simulation</button>
         </div>
+
+        <div class="card">
+            <h2>Account Transactions and Balances</h2>
+            <select id="accountViewSelect" onchange="viewAccountDetails()">
+                <option value="">Select an account to view</option>
+            </select>
+            <div id="accountDetails">
+                <p>Balance: <span id="accountBalance"></span></p>
+                <button id="faucetButton" class="faucet-button" style="display: none;" onclick="goToFaucet()">Get Testnet Algos</button>
+                <h3>Recent Transactions</h3>
+                <div id="transactionList" class="transaction-list"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Fetch accounts when the page loads
         window.onload = function() {
             fetch('/api/accounts')
                 .then(response => response.json())
                 .then(accounts => {
                     const select = document.getElementById('accountSelect');
+                    const viewSelect = document.getElementById('accountViewSelect');
                     accounts.forEach(account => {
                         const option = document.createElement('option');
                         option.value = account;
                         option.textContent = account;
                         select.appendChild(option);
+                        viewSelect.appendChild(option.cloneNode(true));
                     });
+                    const stokvelOption = document.createElement('option');
+                    stokvelOption.value = 'stokvel';
+                    stokvelOption.textContent = 'Stokvel Account';
+                    viewSelect.appendChild(stokvelOption);
                 });
         };
 
@@ -146,6 +185,50 @@
             .then(response => response.json())
             .then(data => alert(data.message))
             .catch(error => alert('Error: ' + error));
+        }
+
+        function viewAccountDetails() {
+            const address = document.getElementById('accountViewSelect').value;
+            if (!address) return;
+
+            fetch(`/api/account_details?address=${address}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Received data:', data);
+
+                    document.getElementById('accountBalance').textContent = `${data.balance} Algos`;
+                    const transactionList = document.getElementById('transactionList');
+                    transactionList.innerHTML = '';
+
+                    if (Array.isArray(data.transactions)) {
+                        data.transactions.forEach(tx => {
+                            const txElement = document.createElement('div');
+                            txElement.className = 'transaction-item';
+                            txElement.textContent = `${tx.type}: ${tx.amount} Algos - ${tx.date}`;
+                            transactionList.appendChild(txElement);
+                        });
+                    } else {
+                        console.error('Transactions data is not an array:', data.transactions);
+                        transactionList.textContent = 'No transaction data available';
+                    }
+
+                    const faucetButton = document.getElementById('faucetButton');
+                    if (data.balance < 5) {
+                        faucetButton.style.display = 'block';
+                        document.getElementById('accountBalance').classList.add('low-balance');
+                    } else {
+                        faucetButton.style.display = 'none';
+                        document.getElementById('accountBalance').classList.remove('low-balance');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching account details:', error);
+                    alert('Error fetching account details: ' + error);
+                });
+        }
+
+        function goToFaucet() {
+            window.open('https://bank.testnet.algorand.network/', '_blank');
         }
     </script>
 </body>
