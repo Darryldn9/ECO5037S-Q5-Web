@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stokvel Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stokvel Dashboard</h1>
+
+        <div class="card">
+            <h2>Account Selection</h2>
+            <select id="accountSelect">
+                <option value="">Select an account</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <h2>Contribute to Stokvel</h2>
+            <label for="contributionAmount">Amount (Algos)</label>
+            <input type="number" id="contributionAmount" placeholder="Enter amount">
+            <button onclick="contribute()">Contribute</button>
+        </div>
+
+        <div class="card">
+            <h2>Transfer Funds</h2>
+            <label for="transferAmount">Amount (Algos)</label>
+            <input type="number" id="transferAmount" placeholder="Enter amount">
+            <label for="transferRecipient">Recipient Address</label>
+            <input type="text" id="transferRecipient" placeholder="Enter recipient address">
+            <button onclick="transfer()">Transfer</button>
+        </div>
+
+        <div class="card">
+            <h2>Simulate Stokvel Cycle</h2>
+            <p>Click the button below to simulate a complete 5-month stokvel cycle.</p>
+            <button onclick="simulateCycle()">Start Simulation</button>
+        </div>
+    </div>
+
+    <script>
+        // Fetch accounts when the page loads
+        window.onload = function() {
+            fetch('/api/accounts')
+                .then(response => response.json())
+                .then(accounts => {
+                    const select = document.getElementById('accountSelect');
+                    accounts.forEach(account => {
+                        const option = document.createElement('option');
+                        option.value = account;
+                        option.textContent = account;
+                        select.appendChild(option);
+                    });
+                });
+        };
+
+        function contribute() {
+            const address = document.getElementById('accountSelect').value;
+            const amount = document.getElementById('contributionAmount').value;
+
+            fetch('/api/contribute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ address, amount }),
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function transfer() {
+            const fromAddress = document.getElementById('accountSelect').value;
+            const toAddress = document.getElementById('transferRecipient').value;
+            const amount = document.getElementById('transferAmount').value;
+
+            fetch('/api/transfer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fromAddress, toAddress, amount }),
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function simulateCycle() {
+            fetch('/api/simulate', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => alert('Error: ' + error));
+        }
+    </script>
+</body>
+</html>
